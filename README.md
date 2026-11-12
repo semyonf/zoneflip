@@ -43,7 +43,7 @@ There is no Dock icon: the app lives only in the menu bar. Quit it from its menu
 
 Click the label → **Настройки…** (the UI is in Russian).
 
-- **Label** — free text shown before the time, for example `NY`
+- **Label** — free text shown before the time, for example `NY` or a flag emoji (⌃⌘Space opens the emoji picker)
 - **Time zone** — any zone from the system list
 - **↑ / ↓** — change the order
 - **Interval** — seconds between flips

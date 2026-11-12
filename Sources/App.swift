@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 	var bag = Set<AnyCancellable>()
 
 	func applicationDidFinishLaunching(_ note: Notification) {
+		NSApp.mainMenu = Self.mainMenu()
 		statusItem = NSStatusBar.system.statusItem(withLength: 60)
 		let button = statusItem.button!
 		let host = PassthroughHostingView(rootView: FlipLabel(rotator: rotator))
@@ -35,6 +36,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 		rotator.$now.combineLatest(store.$zones)
 			.sink { [weak self] now, zones in self?.updateWidth(now, zones) }
 			.store(in: &bag)
+	}
+
+	/// A menu-bar-only app has no main menu, so text fields get no ⌘C/⌘V/⌘X/⌘A/⌘Z.
+	/// The menu is never shown, but its key equivalents still reach the settings window.
+	static func mainMenu() -> NSMenu {
+		let edit = NSMenu(title: "Edit")
+		edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+		edit.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+		edit.addItem(.separator())
+		edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+		edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+		edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+		edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+		edit.addItem(.separator())
+		let emoji = edit.addItem(withTitle: "Emoji & Symbols", action: #selector(NSApplication.orderFrontCharacterPalette(_:)), keyEquivalent: " ")
+		emoji.keyEquivalentModifierMask = [.control, .command]
+
+		let window = NSMenu(title: "Window")
+		window.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+
+		let main = NSMenu()
+		for sub in [NSMenu(title: "ZoneFlip"), edit, window] { // the first submenu is the app menu
+			let item = NSMenuItem()
+			item.submenu = sub
+			main.addItem(item)
+		}
+		return main
 	}
 
 	func updateWidth(_ now: Date, _ zones: [Zone]) {
