@@ -1,0 +1,4 @@
+.build/
+.swiftpm/
+ZoneFlip.app/
+.DS_Store
