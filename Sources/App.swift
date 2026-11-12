@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 	lazy var rotator = Rotator(store: store)
 	var statusItem: NSStatusItem!
 	var settingsWindow: NSWindow?
+	var openZoneItems: [(Zone, NSMenuItem)] = [] // filled only while the menu is open
 	var bag = Set<AnyCancellable>()
 
 	func applicationDidFinishLaunching(_ note: Notification) {
@@ -34,7 +35,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
 		// Fixed width = widest label, so the item does not jump between zones.
 		rotator.$now.combineLatest(store.$zones)
-			.sink { [weak self] now, zones in self?.updateWidth(now, zones) }
+			.sink { [weak self] now, zones in
+				self?.updateWidth(now, zones)
+				self?.openZoneItems.forEach { zone, item in
+					let title = Self.menuTitle(zone, now)
+					if item.title != title { item.title = title }
+				}
+			}
 			.store(in: &bag)
 	}
 
@@ -72,14 +79,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 		if statusItem.length != len { statusItem.length = len }
 	}
 
+	static func menuTitle(_ zone: Zone, _ now: Date) -> String {
+		let name = TimeZone(identifier: zone.identifier)?.localizedName(for: .generic, locale: .current) ?? zone.identifier
+		return "\(Rotator.label(zone, now))   \(name)"
+	}
+
+	func menuDidClose(_ menu: NSMenu) {
+		openZoneItems = []
+	}
+
 	func menuNeedsUpdate(_ menu: NSMenu) {
 		menu.removeAllItems()
 		let now = Date()
-		for zone in store.zones {
-			let name = TimeZone(identifier: zone.identifier)?.localizedName(for: .generic, locale: .current) ?? zone.identifier
-			let item = NSMenuItem(title: "\(Rotator.label(zone, now))   \(name)", action: nil, keyEquivalent: "")
+		openZoneItems = store.zones.map { zone in
+			let item = NSMenuItem(title: Self.menuTitle(zone, now), action: nil, keyEquivalent: "")
 			item.isEnabled = false
 			menu.addItem(item)
+			return (zone, item)
 		}
 		menu.addItem(.separator())
 		menu.addItem(withTitle: "Настройки…", action: #selector(openSettings), keyEquivalent: ",").target = self
