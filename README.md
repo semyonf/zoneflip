@@ -30,6 +30,8 @@ Requires the Xcode Command Line Tools (Swift 5.10 or later).
 
 This produces an ad-hoc signed `ZoneFlip.app` next to the script.
 
+The app icon source is `Resources/AppIcon.icon` (Icon Composer). The compiled `Assets.car` and `AppIcon.icns` are committed. After changing the icon, run `./icon.sh` to recompile them; it needs the full Xcode 26 or later.
+
 ## Install
 
 ```bash
